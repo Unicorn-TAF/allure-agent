@@ -1,4 +1,7 @@
-# allure-agent
+![Nuget](https://img.shields.io/nuget/v/Unicorn.AllureAgent?style=plastic)
+![Nuget](https://img.shields.io/nuget/dt/Unicorn.AllureAgent?style=plastic)
+
+# Allure agent
 
 Unicorn has ability to generate powerful test results report using [Allure Framework](https://docs.qameta.io/allure/)
 
