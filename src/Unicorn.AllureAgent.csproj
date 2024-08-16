@@ -2,24 +2,7 @@
 
   <PropertyGroup>
     <TargetFrameworks>net5.0;net452;netstandard2.0</TargetFrameworks>
-    <GeneratePackageOnBuild>true</GeneratePackageOnBuild>
-    <Company>Vitaliy Dobriyan</Company>
-    <Authors>Vitaliy Dobriyan</Authors>
-    <Title>Unicorn.AllureAgent</Title>
-    <Description>
-      Unicorn.AllureAgent is Unicorn test automation framework extension which allows to report your tests execution into Allure report.
-      This package includes ready for use implementation of Allure extension which is referenced by your tests.
-    </Description>
-    <Copyright>Copyright © 2022 Vitaliy Dobriyan</Copyright>
-    <Version>2.0.0</Version>
-    <PackageLicenseFile>LICENSE.txt</PackageLicenseFile>
-    <RepositoryType>git</RepositoryType>
-    <RepositoryUrl>https://bitbucket.org/dobriyanchik/unicorntools</RepositoryUrl>
-    <PackageProjectUrl>https://bitbucket.org/dobriyanchik/unicorntools</PackageProjectUrl>
-    <PackageTags>automation allure reporting</PackageTags>
-    <PackageReleaseNotes>Support of netstandard, support of Taf.Core 3.0.</PackageReleaseNotes>
-    <PackageIcon>icon.png</PackageIcon>
-    <PackageIconUrl />
+    <NuspecProperties>version=$(Version)</NuspecProperties>
   </PropertyGroup>
 
   <PropertyGroup Condition="'$(Configuration)|$(Platform)'=='Debug|AnyCPU'">
@@ -39,11 +22,6 @@
     <Content Include="allureConfig.Template.json" Pack="true" />
     <PackageReference Include="Allure.Commons" Version="3.5.0.4" />
     <PackageReference Include="Unicorn.Taf.Core" Version="3.0.0" />
-  </ItemGroup>
-
-  <ItemGroup>
-    <None Include="..\icon.png" Pack="true" PackagePath="\" />
-    <None Include="..\LICENSE.txt" Pack="true" PackagePath="\" />
   </ItemGroup>
 
 </Project>
