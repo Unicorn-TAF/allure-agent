@@ -11,6 +11,13 @@ namespace Unicorn.AllureAgent
     /// </summary>
     public partial class AllureListener
     {
+        internal static class LabelNames
+        {
+            internal const string TestCaseId = "AS_ID";
+            internal const string Language = "language";
+            internal const string Framework = "framework";
+        }
+
         private string testGuid = null;
 
         internal void StartSuiteMethod(SuiteMethod suiteMethod)
@@ -19,24 +26,32 @@ namespace Unicorn.AllureAgent
             {
                 var labels = new List<Label>()
                 {
-                    Label.Owner(suiteMethod.Outcome.Author),
+                    Label.Thread(),
+                    new Label() {name = LabelNames.Language, value = "C#" },
+                    new Label() {name = LabelNames.Framework, value = "Unicorn.TAF" },
                     Label.Host(Environment.MachineName),
-                    Label.Suite(testSuite.Outcome.Name),
                     Label.TestClass(testSuite.GetType().Name),
                     Label.Package(testSuite.GetType().Namespace)
                 };
 
-                foreach (var tag in testSuite.Tags)
-                {
-                    labels.Add(Label.Feature(tag));
-                }
+                string idValue = "-1";
+                List<string> suites = new List<string>();
 
                 if (suiteMethod.MethodType.Equals(SuiteMethodType.Test))
                 {
-                    labels.AddRange((suiteMethod as Test)
-                        .Categories
-                        .Select(c => new Label() { name = "Category", value = c }));
+                    idValue = suiteMethod.Outcome.TestCaseId;
+                    labels.Add(Label.Owner(suiteMethod.Outcome.Author));
+                    labels.AddRange(testSuite.Tags.Select(tag => Label.Feature(tag)));
+                    suites.AddRange((suiteMethod as Test).Categories);
                 }
+
+                if (!suites.Any())
+                {
+                    suites.Add("Tests without suite");
+                }
+
+                labels.AddRange(suites.Select(s => Label.Suite(s)));
+                labels.Add(new Label() { name = LabelNames.TestCaseId, value = idValue });
 
                 var result = new TestResult
                 {
@@ -47,11 +62,7 @@ namespace Unicorn.AllureAgent
                     historyId = suiteMethod.Outcome.Id.ToString(),
                 };
 
-                if (suiteMethod.MethodType.Equals(SuiteMethodType.Test))
-                {
-                    labels.Add(new Label() { name = "AS_ID", value = suiteMethod.Outcome.TestCaseId });
-                    result.testCaseId = suiteMethod.Outcome.TestCaseId;
-                }
+                result.testCaseId = idValue;
 
                 testGuid = suiteMethod.Outcome.Id.ToString();
                 AllureLifecycle.Instance.StartTestCase(testSuite.Outcome.Id.ToString(), result);
