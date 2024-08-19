@@ -1,6 +1,6 @@
 @echo off
 set PKG=Unicorn.AllureAgent
-set PROJ_PATH=%cd%\..\src\%PKG%\%PKG%
+set PROJ_PATH=%cd%\..\src\%PKG%
 set VERSION=%1
 set OUT_DIR=%2
 
