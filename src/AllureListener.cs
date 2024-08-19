@@ -35,19 +35,22 @@ namespace Unicorn.AllureAgent
                 };
 
                 string idValue = "-1";
+                List<string> suites = new List<string>();
 
                 if (suiteMethod.MethodType.Equals(SuiteMethodType.Test))
                 {
                     idValue = suiteMethod.Outcome.TestCaseId;
                     labels.Add(Label.Owner(suiteMethod.Outcome.Author));
                     labels.AddRange(testSuite.Tags.Select(tag => Label.Feature(tag)));
-                    labels.AddRange((suiteMethod as Test).Categories.Select(c => Label.Suite(c)));
-                }
-                else
-                {
-                    labels.Add(Label.Suite("Tests without suite"));
+                    suites.AddRange((suiteMethod as Test).Categories);
                 }
 
+                if (!suites.Any())
+                {
+                    suites.Add("Tests without suite");
+                }
+
+                labels.AddRange(suites.Select(s => Label.Suite(s)));
                 labels.Add(new Label() { name = LabelNames.TestCaseId, value = idValue });
 
                 var result = new TestResult
