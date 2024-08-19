@@ -43,8 +43,15 @@ namespace Unicorn.AllureAgent
                     uuid = suiteMethod.Outcome.Id.ToString(),
                     name = suiteMethod.Outcome.Title,
                     fullName = suiteMethod.Outcome.FullMethodName,
-                    labels = labels
+                    labels = labels,
+                    historyId = suiteMethod.Outcome.Id.ToString(),
                 };
+
+                if (suiteMethod.MethodType.Equals(SuiteMethodType.Test))
+                {
+                    labels.Add(new Label() { name = "AS_ID", value = suiteMethod.Outcome.TestCaseId });
+                    result.testCaseId = suiteMethod.Outcome.TestCaseId;
+                }
 
                 testGuid = suiteMethod.Outcome.Id.ToString();
                 AllureLifecycle.Instance.StartTestCase(testSuite.Outcome.Id.ToString(), result);
