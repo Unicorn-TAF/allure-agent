@@ -18,7 +18,6 @@ namespace Unicorn.AllureAgent
             internal const string Framework = "framework";
         }
 
-
         private string testGuid = null;
 
         internal void StartSuiteMethod(SuiteMethod suiteMethod)
@@ -35,17 +34,6 @@ namespace Unicorn.AllureAgent
                     Label.Package(testSuite.GetType().Namespace)
                 };
 
-                HashSet<string> categories = (suiteMethod as Test).Categories;
-
-                if (categories.Any())
-                {
-                    labels.AddRange(categories.Select(c => Label.Suite(c)));
-                }
-                else
-                {
-                    labels.Add(Label.Suite("Tests without suite"));
-                }
-
                 string idValue = "-1";
 
                 if (suiteMethod.MethodType.Equals(SuiteMethodType.Test))
@@ -53,6 +41,11 @@ namespace Unicorn.AllureAgent
                     idValue = suiteMethod.Outcome.TestCaseId;
                     labels.Add(Label.Owner(suiteMethod.Outcome.Author));
                     labels.AddRange(testSuite.Tags.Select(tag => Label.Feature(tag)));
+                    labels.AddRange((suiteMethod as Test).Categories.Select(c => Label.Suite(c)));
+                }
+                else
+                {
+                    labels.Add(Label.Suite("Tests without suite"));
                 }
 
                 labels.Add(new Label() { name = LabelNames.TestCaseId, value = idValue });
