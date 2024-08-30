@@ -11,90 +11,50 @@ namespace Unicorn.AllureAgent
     /// </summary>
     public partial class AllureListener
     {
-        internal static class LabelNames
-        {
-            internal const string TestCaseId = "AS_ID";
-            internal const string Language = "language";
-            internal const string Framework = "framework";
-        }
-
         private string testGuid = null;
 
-        internal void StartSuiteMethod(SuiteMethod suiteMethod)
+        internal void StartTest(SuiteMethod suiteMethod)
         {
             try
             {
-                var labels = new List<Label>()
+                TestOutcome outcome = suiteMethod.Outcome;
+                List<Label> labels = GenerateLabels(suiteMethod);
+
+                TestResult result = new TestResult
                 {
-                    Label.Thread(),
-                    new Label() {name = LabelNames.Language, value = "C#" },
-                    new Label() {name = LabelNames.Framework, value = "Unicorn.TAF" },
-                    Label.Host(Environment.MachineName),
-                    Label.TestClass(testSuite.GetType().Name),
-                    Label.Package(testSuite.GetType().Namespace)
-                };
-
-                string idValue = "-1";
-                List<string> suites = new List<string>();
-
-                if (suiteMethod.MethodType.Equals(SuiteMethodType.Test))
-                {
-                    idValue = suiteMethod.Outcome.TestCaseId;
-                    labels.Add(Label.Owner(suiteMethod.Outcome.Author));
-                    labels.AddRange(testSuite.Tags.Select(tag => Label.Feature(tag)));
-                    suites.AddRange((suiteMethod as Test).Categories);
-                }
-
-                if (!suites.Any())
-                {
-                    suites.Add("Tests without suite");
-                }
-
-                labels.AddRange(suites.Select(s => Label.Suite(s)));
-                labels.Add(new Label() { name = LabelNames.TestCaseId, value = idValue });
-
-                var result = new TestResult
-                {
-                    uuid = suiteMethod.Outcome.Id.ToString(),
-                    name = suiteMethod.Outcome.Title,
-                    fullName = suiteMethod.Outcome.FullMethodName,
+                    uuid = outcome.Id.ToString(),
+                    name = outcome.Title,
+                    fullName = outcome.FullMethodName,
                     labels = labels,
-                    historyId = suiteMethod.Outcome.Id.ToString(),
+                    historyId = outcome.Id.ToString(),
                 };
 
-                result.testCaseId = idValue;
+                if (!string.IsNullOrEmpty(outcome.TestCaseId))
+                {
+                    result.links.Add(Link.Tms("Related test case", outcome.TestCaseId));
+                }
 
-                testGuid = suiteMethod.Outcome.Id.ToString();
+                testGuid = outcome.Id.ToString();
                 AllureLifecycle.Instance.StartTestCase(testSuite.Outcome.Id.ToString(), result);
             }
             catch (Exception e)
             {
-                Console.WriteLine("Exception in StartSuiteMethod '{0}'." + Environment.NewLine + e, suiteMethod.Outcome.Title);
+                Console.WriteLine("Exception in StartTest." + Environment.NewLine + e);
             }
         }
 
-        internal void FinishSuiteMethod(SuiteMethod suiteMethod)
+        internal void FinishTest(SuiteMethod suiteMethod)
         {
             try
             {
-                var uuid = suiteMethod.Outcome.Id.ToString();
+                string uuid = suiteMethod.Outcome.Id.ToString();
 
-                switch (suiteMethod.Outcome.Result)
+                AllureLifecycle.Instance.UpdateTestCase(uuid, r => r.status = GetStatus(suiteMethod.Outcome));
+
+                if (suiteMethod.Outcome.Result == Taf.Core.Testing.Status.Failed)
                 {
-                    case Taf.Core.Testing.Status.Failed:
-                        FailTest(suiteMethod, uuid);
-                        break;
-                    case Taf.Core.Testing.Status.Skipped:
-                        AllureLifecycle.Instance.UpdateTestCase(uuid, r =>
-                        {
-                            r.status = Allure.Commons.Status.skipped;
-                        });
-                        break;
-                    default:
-                        AllureLifecycle.Instance.UpdateTestCase(uuid, r => r.status = Allure.Commons.Status.passed);
-                        break;
+                    FailTest(suiteMethod.Outcome, uuid);
                 }
-
 
                 testGuid = null;
                 AllureLifecycle.Instance.StopTestCase(uuid);
@@ -102,61 +62,198 @@ namespace Unicorn.AllureAgent
             }
             catch (Exception e)
             {
-                Console.WriteLine("Exception in FinishSuiteMethod '{0}'." + Environment.NewLine + e, suiteMethod.Outcome.Title);
+                Console.WriteLine("Exception in FinishTest." + Environment.NewLine + e);
             }
         }
 
-        internal void SkipSuiteMethod(SuiteMethod suiteMethod)
+        internal void StartFixture(SuiteMethod suiteMethod)
         {
-            StartSuiteMethod(suiteMethod);
-            FinishSuiteMethod(suiteMethod);
+            try
+            {
+                TestOutcome outcome = suiteMethod.Outcome;
+
+                var result = new FixtureResult
+                {
+                    name = outcome.Title
+                };
+
+                switch (suiteMethod.MethodType)
+                {
+                    case SuiteMethodType.BeforeSuite:
+                    case SuiteMethodType.BeforeTest:
+                        AllureLifecycle.Instance.StartBeforeFixture(
+                            testSuite.Outcome.Id.ToString(), outcome.Id.ToString(), result);
+                        break;
+                    case SuiteMethodType.AfterSuite:
+                    case SuiteMethodType.AfterTest:
+                        AllureLifecycle.Instance.StartAfterFixture(
+                            testSuite.Outcome.Id.ToString(), outcome.Id.ToString(), result);
+                        break;
+                    default:
+                        break;
+                }
+
+                testGuid = outcome.Id.ToString();
+            }
+            catch (Exception e)
+            {
+                Console.WriteLine("Exception in StartFixture." + Environment.NewLine + e);
+            }
         }
 
-        private void FailTest(SuiteMethod suiteMethod, string uuid)
+        internal void FinishFixture(SuiteMethod suiteMethod)
         {
-            var details = new StatusDetails()
+            try
             {
-                message = suiteMethod.Outcome.Exception.Message,
-                trace = suiteMethod.Outcome.Exception.StackTrace
+                string uuid = suiteMethod.Outcome.Id.ToString();
+                AllureLifecycle.Instance.UpdateFixture(uuid, r => r.status = GetStatus(suiteMethod.Outcome));
+
+                if (suiteMethod.Outcome.Result == Taf.Core.Testing.Status.Failed)
+                {
+                    FailFixture(suiteMethod.Outcome, uuid);
+                }
+
+                testGuid = null;
+                AllureLifecycle.Instance.StopFixture(uuid);
+            }
+            catch (Exception e)
+            {
+                Console.WriteLine("Exception in FinishFixture." + Environment.NewLine + e);
+            }
+        }
+
+        internal void SkipTest(SuiteMethod suiteMethod)
+        {
+            StartTest(suiteMethod);
+            FinishTest(suiteMethod);
+        }
+
+        private static void FailTest(TestOutcome outcome, string uuid)
+        {
+            StatusDetails details = new StatusDetails()
+            {
+                message = outcome.Exception.Message,
+                trace = outcome.Exception.StackTrace
             };
 
             AllureLifecycle.Instance.UpdateTestCase(uuid, r =>
             {
+                r.statusDetails = details;
+
                 if (r.steps.Any())
                 {
                     r.steps.Last().status = Allure.Commons.Status.failed;
                 }
-            });
 
-            var failed = suiteMethod.Outcome.Exception.GetType().Name
-                .ToLowerInvariant().Contains("assert");
-
-            var status = failed ? Allure.Commons.Status.failed : Allure.Commons.Status.broken;
-
-            AllureLifecycle.Instance.UpdateTestCase(uuid, r =>
-            {
-                r.status = status;
-                r.statusDetails = details;
-            });
-
-            if (suiteMethod.Outcome.Attachments.Any())
-            {
-                var attachments = new List<Allure.Commons.Attachment>();
-
-                foreach (var a in suiteMethod.Outcome.Attachments)
+                if (outcome.Defect != null)
                 {
-                    var attachment = new Allure.Commons.Attachment()
-                    {
-                        name = a.Name,
-                        source = a.FilePath,
-                        type = a.MimeType
-                    };
-
-                    attachments.Add(attachment);
+                    r.links.Add(Link.Issue("Related defect", outcome.Defect.Id));
                 }
 
-                AllureLifecycle.Instance.UpdateTestCase(uuid, r => r.attachments = attachments);
+                if (outcome.Attachments.Any())
+                {
+                    List<Allure.Commons.Attachment> attachments = CollectAttachments(outcome);
+                    r.attachments.AddRange(attachments);
+                }
+            });
+        }
+
+        private static void FailFixture(TestOutcome outcome, string uuid)
+        {
+            var details = new StatusDetails()
+            {
+                message = outcome.Exception.Message,
+                trace = outcome.Exception.StackTrace
+            };
+
+            AllureLifecycle.Instance.UpdateFixture(uuid, r =>
+            {
+                r.statusDetails = details;
+
+                if (r.steps.Any())
+                {
+                    r.steps.Last().status = Allure.Commons.Status.failed;
+                }
+
+                if (outcome.Attachments.Any())
+                {
+                    List<Allure.Commons.Attachment> attachments = CollectAttachments(outcome);
+                    r.attachments.AddRange(attachments);
+                }
+            });
+        }
+
+        private static List<Allure.Commons.Attachment> CollectAttachments(TestOutcome outcome)
+        {
+            var attachments = new List<Allure.Commons.Attachment>();
+
+            foreach (var a in outcome.Attachments)
+            {
+                var attachment = new Allure.Commons.Attachment()
+                {
+                    name = a.Name,
+                    source = a.FilePath,
+                    type = a.MimeType
+                };
+
+                attachments.Add(attachment);
             }
+
+            return attachments;
+        }
+
+        private static Allure.Commons.Status GetStatus(TestOutcome outcome)
+        {
+            switch (outcome.Result)
+            {
+                case Taf.Core.Testing.Status.Failed:
+                    return GetFailedStatus();
+                case Taf.Core.Testing.Status.Skipped:
+                    return Allure.Commons.Status.skipped;
+                default:
+                    return Allure.Commons.Status.passed;
+            }
+
+            Allure.Commons.Status GetFailedStatus() =>
+                outcome.Exception.GetType().Name.ToLowerInvariant().Contains("assert") ?
+                Allure.Commons.Status.failed :
+                Allure.Commons.Status.broken;
+        }
+
+        private List<Label> GenerateLabels(SuiteMethod suiteMethod)
+        {
+            TestOutcome outcome = suiteMethod.Outcome;
+
+            List<Label> labels = new List<Label>()
+                {
+                    Label.Thread(),
+                    Labels.LangLabel,
+                    Labels.FrameworkLabel,
+                    Label.Host(Environment.MachineName),
+                    Label.TestClass(testSuite.GetType().Name),
+                    Label.Package(testSuite.GetType().Namespace)
+                };
+
+            List<string> suites = new List<string>();
+
+            if (suiteMethod.MethodType.Equals(SuiteMethodType.Test))
+            {
+                labels.Add(Label.Owner(outcome.Author));
+                labels.AddRange(testSuite.Tags.Select(tag => Label.Feature(tag)));
+                suites.AddRange((suiteMethod as Test).Categories);
+
+                string testCaseId = string.IsNullOrEmpty(outcome.TestCaseId) ? "-1" : outcome.TestCaseId;
+                labels.Add(new Label() { name = Labels.Names.TestCaseId, value = testCaseId });
+            }
+
+            if (!suites.Any())
+            {
+                suites.Add("Tests without suite");
+            }
+
+            labels.AddRange(suites.Select(s => Label.Suite(s)));
+
+            return labels;
         }
     }
 }

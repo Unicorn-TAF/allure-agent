@@ -19,12 +19,12 @@ namespace Unicorn.AllureAgent
         {
             _listener = new AllureListener();
 
-            Test.OnTestStart += _listener.StartSuiteMethod;
-            Test.OnTestFinish += _listener.FinishSuiteMethod;
-            Test.OnTestSkip += _listener.SkipSuiteMethod;
+            Test.OnTestStart += _listener.StartTest;
+            Test.OnTestFinish += _listener.FinishTest;
+            Test.OnTestSkip += _listener.SkipTest;
 
-            SuiteMethod.OnSuiteMethodStart += _listener.StartSuiteMethod;
-            SuiteMethod.OnSuiteMethodFinish += _listener.FinishSuiteMethod;
+            SuiteMethod.OnSuiteMethodStart += _listener.StartFixture;
+            SuiteMethod.OnSuiteMethodFinish += _listener.FinishFixture;
 
             TestSuite.OnSuiteStart += _listener.StartSuite;
             TestSuite.OnSuiteFinish += _listener.FinishSuite;
@@ -38,12 +38,12 @@ namespace Unicorn.AllureAgent
         /// </summary>
         public void Dispose()
         {
-            Test.OnTestStart -= _listener.StartSuiteMethod;
-            Test.OnTestFinish -= _listener.FinishSuiteMethod;
-            Test.OnTestSkip -= _listener.SkipSuiteMethod;
+            Test.OnTestStart -= _listener.StartTest;
+            Test.OnTestFinish -= _listener.FinishTest;
+            Test.OnTestSkip -= _listener.SkipTest;
 
-            SuiteMethod.OnSuiteMethodStart -= _listener.StartSuiteMethod;
-            SuiteMethod.OnSuiteMethodFinish -= _listener.FinishSuiteMethod;
+            SuiteMethod.OnSuiteMethodStart -= _listener.StartFixture;
+            SuiteMethod.OnSuiteMethodFinish -= _listener.FinishFixture;
 
             TestSuite.OnSuiteStart -= _listener.StartSuite;
             TestSuite.OnSuiteFinish -= _listener.FinishSuite;
