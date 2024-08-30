@@ -15,7 +15,7 @@
       Unicorn.AllureAgent is Unicorn test automation framework extension which allows to report your tests execution into Allure report.
       This package includes ready for use implementation of Allure extension which is referenced by your tests.
     </description>
-    <releaseNotes>TestCaseId attribute, history ID, more labels reported</releaseNotes>
+    <releaseNotes>Test fixtures reporting within test container, TMS and issue links</releaseNotes>
     <tags>unicorn-taf automation allure reporting</tags>
     <dependencies>
       <group targetFramework="net452">
