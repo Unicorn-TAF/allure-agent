@@ -1,6 +1,6 @@
-﻿using Allure.Commons;
+﻿using Allure.Net.Commons;
 
-namespace Unicorn.AllureAgent
+namespace Unicorn.Reporting.Allure
 {
     internal class Labels
     {

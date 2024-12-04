@@ -1,30 +1,26 @@
-﻿using Allure.Commons;
+﻿using Allure.Net.Commons;
 using System;
 using System.Reflection;
 using Unicorn.Taf.Core.Steps;
 
-namespace Unicorn.AllureAgent
+namespace Unicorn.Reporting.Allure
 {
     /// <summary>
     /// Allure listener, which handles reporting stuff for all test items.
     /// </summary>
     public partial class AllureListener
     {
-        private string stepGuid = null;
-
         internal void StartStep(MethodBase method, object[] arguments)
         {
             try
             {
-                stepGuid = Guid.NewGuid().ToString();
-
                 var result = new StepResult()
                 {
                     name = StepsUtilities.GetStepInfo(method, arguments),
                     status = Status.passed
                 };
 
-                AllureLifecycle.Instance.StartStep(testGuid, stepGuid, result);
+                AllureLifecycle.Instance.StartStep(result);
             }
             catch (Exception e)
             {
@@ -36,8 +32,7 @@ namespace Unicorn.AllureAgent
         {
             try
             {
-                AllureLifecycle.Instance.StopStep(stepGuid);
-                stepGuid = null;
+                AllureLifecycle.Instance.StopStep();
             }
             catch (Exception e)
             {

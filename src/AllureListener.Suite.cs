@@ -1,10 +1,10 @@
-﻿using Allure.Commons;
+﻿using Allure.Net.Commons;
 using System;
 using System.IO;
 using System.Text;
 using Unicorn.Taf.Core.Testing;
 
-namespace Unicorn.AllureAgent
+namespace Unicorn.Reporting.Allure
 {
     /// <summary>
     /// Allure listener, which handles reporting stuff for all test items.
@@ -85,8 +85,8 @@ namespace Unicorn.AllureAgent
         {
             try
             {
-                AllureLifecycle.Instance.StopTestContainer(suite.Outcome.Id.ToString());
-                AllureLifecycle.Instance.WriteTestContainer(suite.Outcome.Id.ToString());
+                AllureLifecycle.Instance.StopTestContainer();
+                AllureLifecycle.Instance.WriteTestContainer();
                 testSuite = null;
             }
             catch (Exception e)
