@@ -1,18 +1,18 @@
-﻿using Allure.Commons;
+﻿using Allure.Net.Commons;
 using System;
 using System.Collections.Generic;
 using System.Linq;
 using Unicorn.Taf.Core.Testing;
+using AllureStatus = Allure.Net.Commons.Status;
+using AllureAttachment = Allure.Net.Commons.Attachment;
 
-namespace Unicorn.AllureAgent
+namespace Unicorn.Reporting.Allure
 {
     /// <summary>
     /// Allure listener, which handles reporting stuff for all test items.
     /// </summary>
     public partial class AllureListener
     {
-        private string testGuid = null;
-
         internal void StartTest(SuiteMethod suiteMethod)
         {
             try
@@ -34,8 +34,7 @@ namespace Unicorn.AllureAgent
                     result.links.Add(Link.Tms("Related test case", outcome.TestCaseId));
                 }
 
-                testGuid = outcome.Id.ToString();
-                AllureLifecycle.Instance.StartTestCase(testSuite.Outcome.Id.ToString(), result);
+                AllureLifecycle.Instance.StartTestCase(result);
             }
             catch (Exception e)
             {
@@ -47,18 +46,16 @@ namespace Unicorn.AllureAgent
         {
             try
             {
-                string uuid = suiteMethod.Outcome.Id.ToString();
 
-                AllureLifecycle.Instance.UpdateTestCase(uuid, r => r.status = GetStatus(suiteMethod.Outcome));
+                AllureLifecycle.Instance.UpdateTestCase(r => r.status = GetStatus(suiteMethod.Outcome));
 
                 if (suiteMethod.Outcome.Result == Taf.Core.Testing.Status.Failed)
                 {
-                    FailTest(suiteMethod.Outcome, uuid);
+                    FailTest(suiteMethod.Outcome);
                 }
 
-                testGuid = null;
-                AllureLifecycle.Instance.StopTestCase(uuid);
-                AllureLifecycle.Instance.WriteTestCase(uuid);
+                AllureLifecycle.Instance.StopTestCase();
+                AllureLifecycle.Instance.WriteTestCase();
             }
             catch (Exception e)
             {
@@ -81,19 +78,15 @@ namespace Unicorn.AllureAgent
                 {
                     case SuiteMethodType.BeforeSuite:
                     case SuiteMethodType.BeforeTest:
-                        AllureLifecycle.Instance.StartBeforeFixture(
-                            testSuite.Outcome.Id.ToString(), outcome.Id.ToString(), result);
+                        AllureLifecycle.Instance.StartBeforeFixture(result);
                         break;
                     case SuiteMethodType.AfterSuite:
                     case SuiteMethodType.AfterTest:
-                        AllureLifecycle.Instance.StartAfterFixture(
-                            testSuite.Outcome.Id.ToString(), outcome.Id.ToString(), result);
+                        AllureLifecycle.Instance.StartAfterFixture(result);
                         break;
                     default:
                         break;
                 }
-
-                testGuid = outcome.Id.ToString();
             }
             catch (Exception e)
             {
@@ -105,16 +98,14 @@ namespace Unicorn.AllureAgent
         {
             try
             {
-                string uuid = suiteMethod.Outcome.Id.ToString();
-                AllureLifecycle.Instance.UpdateFixture(uuid, r => r.status = GetStatus(suiteMethod.Outcome));
+                AllureLifecycle.Instance.UpdateFixture(r => r.status = GetStatus(suiteMethod.Outcome));
 
                 if (suiteMethod.Outcome.Result == Taf.Core.Testing.Status.Failed)
                 {
-                    FailFixture(suiteMethod.Outcome, uuid);
+                    FailFixture(suiteMethod.Outcome);
                 }
 
-                testGuid = null;
-                AllureLifecycle.Instance.StopFixture(uuid);
+                AllureLifecycle.Instance.StopFixture();
             }
             catch (Exception e)
             {
@@ -128,7 +119,7 @@ namespace Unicorn.AllureAgent
             FinishTest(suiteMethod);
         }
 
-        private static void FailTest(TestOutcome outcome, string uuid)
+        private static void FailTest(TestOutcome outcome)
         {
             StatusDetails details = new StatusDetails()
             {
@@ -136,13 +127,13 @@ namespace Unicorn.AllureAgent
                 trace = outcome.Exception.StackTrace
             };
 
-            AllureLifecycle.Instance.UpdateTestCase(uuid, r =>
+            AllureLifecycle.Instance.UpdateTestCase(r =>
             {
                 r.statusDetails = details;
 
                 if (r.steps.Any())
                 {
-                    r.steps.Last().status = Allure.Commons.Status.failed;
+                    r.steps.Last().status = AllureStatus.failed;
                 }
 
                 if (outcome.Defect != null)
@@ -152,13 +143,13 @@ namespace Unicorn.AllureAgent
 
                 if (outcome.Attachments.Any())
                 {
-                    List<Allure.Commons.Attachment> attachments = CollectAttachments(outcome);
+                    List<AllureAttachment> attachments = CollectAttachments(outcome);
                     r.attachments.AddRange(attachments);
                 }
             });
         }
 
-        private static void FailFixture(TestOutcome outcome, string uuid)
+        private static void FailFixture(TestOutcome outcome)
         {
             var details = new StatusDetails()
             {
@@ -166,30 +157,30 @@ namespace Unicorn.AllureAgent
                 trace = outcome.Exception.StackTrace
             };
 
-            AllureLifecycle.Instance.UpdateFixture(uuid, r =>
+            AllureLifecycle.Instance.UpdateFixture(r =>
             {
                 r.statusDetails = details;
 
                 if (r.steps.Any())
                 {
-                    r.steps.Last().status = Allure.Commons.Status.failed;
+                    r.steps.Last().status = AllureStatus.failed;
                 }
 
                 if (outcome.Attachments.Any())
                 {
-                    List<Allure.Commons.Attachment> attachments = CollectAttachments(outcome);
+                    List<AllureAttachment> attachments = CollectAttachments(outcome);
                     r.attachments.AddRange(attachments);
                 }
             });
         }
 
-        private static List<Allure.Commons.Attachment> CollectAttachments(TestOutcome outcome)
+        private static List<AllureAttachment> CollectAttachments(TestOutcome outcome)
         {
-            var attachments = new List<Allure.Commons.Attachment>();
+            var attachments = new List<AllureAttachment>();
 
             foreach (var a in outcome.Attachments)
             {
-                var attachment = new Allure.Commons.Attachment()
+                var attachment = new AllureAttachment()
                 {
                     name = a.Name,
                     source = a.FilePath,
@@ -202,22 +193,22 @@ namespace Unicorn.AllureAgent
             return attachments;
         }
 
-        private static Allure.Commons.Status GetStatus(TestOutcome outcome)
+        private static AllureStatus GetStatus(TestOutcome outcome)
         {
             switch (outcome.Result)
             {
                 case Taf.Core.Testing.Status.Failed:
                     return GetFailedStatus();
                 case Taf.Core.Testing.Status.Skipped:
-                    return Allure.Commons.Status.skipped;
+                    return AllureStatus.skipped;
                 default:
-                    return Allure.Commons.Status.passed;
+                    return AllureStatus.passed;
             }
 
-            Allure.Commons.Status GetFailedStatus() =>
+            AllureStatus GetFailedStatus() =>
                 outcome.Exception.GetType().Name.ToLowerInvariant().Contains("assert") ?
-                Allure.Commons.Status.failed :
-                Allure.Commons.Status.broken;
+                AllureStatus.failed :
+                AllureStatus.broken;
         }
 
         private List<Label> GenerateLabels(SuiteMethod suiteMethod)
