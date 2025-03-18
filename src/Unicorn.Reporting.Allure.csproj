@@ -17,7 +17,7 @@
   <ItemGroup>
     <Content Include="allureConfig.Template.json" />
     <PackageReference Include="Allure.Net.Commons" Version="2.12.1" />
-    <PackageReference Include="Unicorn.Taf.Core" Version="4.0.0" />
+    <PackageReference Include="Unicorn.Taf.Core" Version="4.2.0" />
   </ItemGroup>
 
 </Project>

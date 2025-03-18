@@ -12,7 +12,7 @@ namespace Unicorn.Reporting.Allure
 
         /// <summary>
         /// Initializes a new instance of the <see cref="AllureReporter"/> class.<br/>
-        /// Automatic subscribtion to all test events.
+        /// Automatic subscription to all test events.
         /// </summary>
         public AllureReporter()
         {
