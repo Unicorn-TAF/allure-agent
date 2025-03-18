@@ -6,7 +6,7 @@
     <title>Unicorn.Reporting.Allure</title>
     <authors>Vitalii Dobriian</authors>
     <license type="expression">Apache-2.0</license>
-    <copyright>Copyright (c) Vitalii Dobriian 2024</copyright>
+    <copyright>Copyright (c) Vitalii Dobriian 2025</copyright>
     <projectUrl>https://unicorn-taf.github.io</projectUrl>
     <repository type="git" url="https://github.com/Unicorn-TAF/allure-agent"/>
     <icon>_content/icon.png</icon>
@@ -21,7 +21,7 @@
     <dependencies>
       <group targetFramework="netstandard2.0">
         <dependency id="Allure.Net.Commons" version="2.12.1"/>
-        <dependency id="Unicorn.Taf.Core" version="4.0.0"/>
+        <dependency id="Unicorn.Taf.Core" version="4.2.0"/>
       </group>
     </dependencies>
   </metadata>

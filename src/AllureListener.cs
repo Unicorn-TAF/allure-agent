@@ -123,8 +123,8 @@ namespace Unicorn.Reporting.Allure
         {
             StatusDetails details = new StatusDetails()
             {
-                message = outcome.Exception.Message,
-                trace = outcome.Exception.StackTrace
+                message = outcome.FailMessage,
+                trace = outcome.FailStackTrace
             };
 
             AllureLifecycle.Instance.UpdateTestCase(r =>
@@ -153,8 +153,8 @@ namespace Unicorn.Reporting.Allure
         {
             var details = new StatusDetails()
             {
-                message = outcome.Exception.Message,
-                trace = outcome.Exception.StackTrace
+                message = outcome.FailMessage,
+                trace = outcome.FailStackTrace
             };
 
             AllureLifecycle.Instance.UpdateFixture(r =>
@@ -206,7 +206,7 @@ namespace Unicorn.Reporting.Allure
             }
 
             AllureStatus GetFailedStatus() =>
-                outcome.Exception.GetType().Name.ToLowerInvariant().Contains("assert") ?
+                IsFailedOnAssertion(outcome.FailMessage) ?
                 AllureStatus.failed :
                 AllureStatus.broken;
         }
@@ -246,5 +246,8 @@ namespace Unicorn.Reporting.Allure
 
             return labels;
         }
+
+        private static bool IsFailedOnAssertion(string message) =>
+            message.ToLowerInvariant().Contains("assertion") || (message.Contains("Expected:") && message.Contains("But:"));
     }
 }
