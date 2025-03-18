@@ -31,7 +31,7 @@ namespace Unicorn.Reporting.Allure
 
                 if (!string.IsNullOrEmpty(outcome.TestCaseId))
                 {
-                    result.links.Add(Link.Tms("Related test case", outcome.TestCaseId));
+                    result.links.Add(Link.Tms("Test case: " + outcome.TestCaseId, outcome.TestCaseId));
                 }
 
                 AllureLifecycle.Instance.StartTestCase(result);
@@ -138,7 +138,7 @@ namespace Unicorn.Reporting.Allure
 
                 if (outcome.Defect != null)
                 {
-                    r.links.Add(Link.Issue("Related defect", outcome.Defect.Id));
+                    r.links.Add(Link.Issue("Defect: " + outcome.Defect.Id, outcome.Defect.Id));
                 }
 
                 if (outcome.Attachments.Any())
