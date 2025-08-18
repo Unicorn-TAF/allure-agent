@@ -215,14 +215,16 @@ namespace Unicorn.Reporting.Allure
         {
             TestOutcome outcome = suiteMethod.Outcome;
 
+            string suiteClassPath = outcome.FullMethodName.Substring(0, outcome.FullMethodName.LastIndexOf("."));
+
             List<Label> labels = new List<Label>()
                 {
                     Label.Thread(),
                     Labels.LangLabel,
                     Labels.FrameworkLabel,
                     Label.Host(Environment.MachineName),
-                    Label.TestClass(testSuite.GetType().Name),
-                    Label.Package(testSuite.GetType().Namespace)
+                    Label.TestClass(suiteClassPath.Substring(suiteClassPath.LastIndexOf(".") + 1)),
+                    Label.Package(suiteClassPath.Substring(0, suiteClassPath.LastIndexOf(".")))
                 };
 
             List<string> suites = new List<string>();
@@ -233,8 +235,11 @@ namespace Unicorn.Reporting.Allure
                 labels.AddRange(testSuite.Tags.Select(tag => Label.Feature(tag)));
                 suites.AddRange((suiteMethod as Test).Categories);
 
-                string testCaseId = string.IsNullOrEmpty(outcome.TestCaseId) ? "-1" : outcome.TestCaseId;
-                labels.Add(new Label() { name = Labels.Names.TestCaseId, value = testCaseId });
+                string tcId = string.IsNullOrEmpty(outcome.TestCaseId) ?
+                    outcome.Id.ToString("N") :
+                    outcome.TestCaseId;
+
+                labels.Add(new Label() { name = Labels.Names.TestCaseId, value = tcId });
             }
 
             if (!suites.Any())
